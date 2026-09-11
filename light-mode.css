@@ -1,0 +1,122 @@
+/* KICKORA Light Mode — polished light theme */
+body.light{
+  --bg:#f5f8f6;
+  --surface:#ffffff;
+  --surface2:#f8fbf9;
+  --line:#dbe6e0;
+  --text:#14231d;
+  --muted:#64766e;
+  --green:#16a85a;
+  --green2:#0f8e4c;
+  --shadow:0 14px 38px rgba(27,55,43,.10);
+  background:
+    radial-gradient(circle at 50% -18%,rgba(66,230,129,.14),transparent 36%),
+    linear-gradient(180deg,#f8fbf9 0%,#f1f6f3 100%);
+  color:var(--text);
+}
+
+body.light .top-ticker{
+  background:rgba(255,255,255,.82);
+  color:#64766e;
+  border-color:#dce7e1;
+}
+body.light .site-header{
+  background:rgba(255,255,255,.84);
+  border-color:#dce7e1;
+  box-shadow:0 8px 28px rgba(30,60,46,.06);
+}
+body.light .main-nav a{color:#667970}
+body.light .main-nav a:hover,
+body.light .main-nav a.active{color:#129852}
+body.light .icon-btn{
+  background:#f4f8f6;
+  border-color:#d7e3dd;
+  color:#263a31;
+}
+
+body.light .live-strip,
+body.light .side-panel,
+body.light .content-section,
+body.light .feature-card{
+  background:rgba(255,255,255,.94);
+  border-color:#dce7e1;
+  box-shadow:var(--shadow);
+}
+body.light .live-item,
+body.light .match-card,
+body.light .team-card,
+body.light .news-card{
+  background:#f8fbf9;
+  border-color:#dce7e1;
+}
+body.light .score-row,
+body.light .latest-item,
+body.light .table-row{border-color:#e5ede9}
+body.light .filter,
+body.light .tab{
+  background:#f4f8f6;
+  border-color:#d9e5df;
+  color:#60736a;
+}
+body.light .filter.active,
+body.light .tab.active{
+  background:#16a85a;
+  border-color:#16a85a;
+  color:#fff;
+}
+body.light .hero-card{border-color:#c9ddd2}
+body.light .hero-content p{color:#dbe9e2}
+body.light .news-card p{color:#6c7f76}
+body.light .news-meta,
+body.light .latest-item small,
+body.light .match-meta{color:#71847b}
+body.light .panel-title,
+body.light .section-heading{color:var(--text)}
+body.light .section-heading button,
+body.light .panel-title button{color:#129852}
+body.light .search-modal{background:rgba(25,42,34,.28)}
+body.light .search-box{
+  background:rgba(255,255,255,.97);
+  border-color:#d5e3dc;
+  box-shadow:0 24px 70px rgba(27,55,43,.18);
+}
+body.light .search-box input{
+  background:#f5f8f6;
+  border-color:#d7e3dd;
+  color:#16251f;
+}
+body.light .search-box>button{color:#64776e}
+body.light .toast{
+  background:#effaf3;
+  color:#145c36;
+  border-color:#a9d9bc;
+  box-shadow:0 12px 30px rgba(25,100,57,.12);
+}
+body.light .skeleton{
+  background:linear-gradient(90deg,#edf3f0,#f8fbf9,#edf3f0);
+}
+body.light footer{
+  border-color:#dce7e1;
+  color:#6b7e75;
+}
+body.light footer .footer-brand{color:#14231d}
+body.light .feature-card p{color:#687b72}
+body.light .app-card{
+  background:radial-gradient(circle at 18% 25%,#dff7e8,#f8fbf9 68%);
+}
+body.light .phone{border-color:#9fcfb3;color:#129852}
+body.light .plus-badge{border-color:#a7d5ba;color:#129852}
+
+/* Keep the light mode from looking like a generic white page */
+body.light .content-section:hover,
+body.light .feature-card:hover,
+body.light .side-panel:hover{
+  border-color:#c7dcd1;
+  box-shadow:0 18px 44px rgba(27,55,43,.13);
+}
+body.light .primary-btn{background:#16a85a;color:#fff;box-shadow:0 8px 22px rgba(22,168,90,.20)}
+body.light .live-dot{background:#16a85a;box-shadow:0 0 12px rgba(22,168,90,.45)}
+
+@media(max-width:820px){
+  body.light .site-header{box-shadow:0 5px 20px rgba(30,60,46,.07)}
+}
