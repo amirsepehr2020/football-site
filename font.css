@@ -1,3 +1,16 @@
+/* KICKORA font system: reliable Persian typography on mobile. */
 @import url('https://fonts.googleapis.com/css2?family=Estedad:wght@400;500;600;700;800;900&display=swap');
 
-:root{font-family:'Estedad',system-ui,sans-serif}
+:root,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: 'Estedad', Tahoma, Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
