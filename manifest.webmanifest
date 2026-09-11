@@ -1,0 +1,45 @@
+{
+  "name": "KICKORA | کیکورا",
+  "short_name": "KICKORA",
+  "description": "کیکورا؛ مرجع جامع فوتبال، اخبار، نتایج، مسابقات، جدول‌ها و ویدیوهای فوتبال.",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#06110d",
+  "theme_color": "#06110d",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/asesst/file_00000000e5188211990fe904071ae2c6.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/asesst/file_00000000e5188211990fe904071ae2c6.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "مسابقات",
+      "short_name": "مسابقات",
+      "url": "/#matches"
+    },
+    {
+      "name": "اخبار",
+      "short_name": "اخبار",
+      "url": "/#news"
+    },
+    {
+      "name": "جدول‌ها",
+      "short_name": "جدول‌ها",
+      "url": "/#tables"
+    }
+  ]
+}
