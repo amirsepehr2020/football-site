@@ -1,12 +1,15 @@
-const CACHE_NAME = 'kickora-shell-v1';
+const CACHE_NAME = 'kickorax-shell-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
-  '/app.js',
+  '/brand.css',
+  '/font.css',
+  '/app-fixed.js',
   '/live-refresh.js',
-  '/manifest.webmanifest',
-  '/asesst/file_00000000e5188211990fe904071ae2c6.png'
+  '/news-translate.js',
+  '/pwa.js',
+  '/manifest.webmanifest'
 ];
 
 self.addEventListener('install', event => {
@@ -21,9 +24,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );
@@ -32,19 +33,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
 
-  // API data must stay fresh; never serve football API responses from the PWA shell cache.
+  // Never cache API responses in the app-shell service worker.
   if (url.pathname.startsWith('/api/')) return;
-
-  // Only cache same-origin app resources.
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(request)
       .then(response => {
-        if (response.ok && (request.destination === 'document' || request.destination === 'script' || request.destination === 'style' || request.destination === 'image' || request.destination === 'manifest')) {
+        if (response.ok && ['document','script','style','image','manifest'].includes(request.destination)) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }
