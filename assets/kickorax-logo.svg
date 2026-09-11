@@ -1,16 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" role="img" aria-labelledby="title desc">
-  <title id="title">KICKORAX logo</title>
-  <desc id="desc">Modern football logo combining a stylized KX monogram with the KICKORAX wordmark.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">KICKORAX</title>
+  <desc id="desc">KICKORAX football monogram icon without wordmark.</desc>
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff9b72"/>
-      <stop offset="0.48" stop-color="#ff6b35"/>
-      <stop offset="1" stop-color="#ff3d16"/>
+    <linearGradient id="g" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff9b72"/><stop offset="0.48" stop-color="#ff6b35"/><stop offset="1" stop-color="#ff3d16"/>
     </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="9" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-
+  <g filter="url(#glow)">
+    <path d="M28 18h48l-10 18H48L37 55h25L51 73H27l-7 13c-5 9 1 18 11 18h28l-10 18H27c-20 0-32-19-22-37L28 18Z" fill="url(#g)"/>
+    <path d="M72 18h24l-17 30 20 38c7 13-3 28-18 28H57l10-18h13l-12-24H45l11-19h23L72 18Z" fill="url(#g)"/>
+    <circle cx="94" cy="24" r="6" fill="#fff" opacity=".92"/>
+  </g>
 </svg>
