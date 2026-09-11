@@ -1,15 +1,15 @@
 {
-  "name": "KICKORA | کیکورا",
-  "short_name": "KICKORA",
-  "description": "کیکورا؛ مرجع جامع فوتبال، اخبار، نتایج، مسابقات، جدول‌ها و ویدیوهای فوتبال.",
+  "name": "KICKORAX | کیکورا‌کس",
+  "short_name": "KICKORAX",
+  "description": "KICKORAX؛ خانه مدرن فوتبال، اخبار، نتایج زنده، مسابقات و جدول‌ها.",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "#06110d",
-  "theme_color": "#06110d",
+  "background_color": "#080a0f",
+  "theme_color": "#080a0f",
   "orientation": "any",
   "icons": [
     {
@@ -26,20 +26,8 @@
     }
   ],
   "shortcuts": [
-    {
-      "name": "مسابقات",
-      "short_name": "مسابقات",
-      "url": "/#matches"
-    },
-    {
-      "name": "اخبار",
-      "short_name": "اخبار",
-      "url": "/#news"
-    },
-    {
-      "name": "جدول‌ها",
-      "short_name": "جدول‌ها",
-      "url": "/#tables"
-    }
+    { "name": "بازی‌ها", "short_name": "بازی‌ها", "url": "/#matches" },
+    { "name": "اخبار", "short_name": "اخبار", "url": "/#news" },
+    { "name": "جدول", "short_name": "جدول", "url": "/#tables" }
   ]
 }
