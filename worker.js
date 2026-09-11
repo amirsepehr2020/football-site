@@ -1,15 +1,14 @@
 const LEAGUES = {
-  'eng.1': { id: 39, name: 'لیگ برتر انگلیس', espn: 'eng.1' },
-  'esp.1': { id: 140, name: 'لالیگا', espn: 'esp.1' },
-  'ita.1': { id: 135, name: 'سری آ ایتالیا', espn: 'ita.1' },
-  'ger.1': { id: 78, name: 'بوندس‌لیگا', espn: 'ger.1' },
-  'fra.1': { id: 61, name: 'لیگ یک فرانسه', espn: 'fra.1' },
-  'uefa.champions': { id: 2, name: 'لیگ قهرمانان اروپا', espn: 'uefa.champions' }
+  'eng.1': { code: 'PL', name: 'لیگ برتر انگلیس' },
+  'esp.1': { code: 'PD', name: 'لالیگا' },
+  'ita.1': { code: 'SA', name: 'سری آ ایتالیا' },
+  'ger.1': { code: 'BL1', name: 'بوندس‌لیگا' },
+  'fra.1': { code: 'FL1', name: 'لیگ یک فرانسه' },
+  'uefa.champions': { code: 'CL', name: 'لیگ قهرمانان اروپا' }
 };
 
-const API_BASE = 'https://v3.football.api-sports.io';
-const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
-const CACHE_SECONDS = { fixtures: 900, standings: 21600, live: 60, news: 600 };
+const API_BASE = 'https://api.football-data.org/v4';
+const CACHE_SECONDS = { fixtures: 900, standings: 21600, live: 60 };
 
 const json = (data, status = 200, cache = 0) => new Response(JSON.stringify(data), {
   status,
@@ -30,156 +29,67 @@ const tehranDate = (offsetDays = 0) => {
   return `${parts.year}-${parts.month}-${parts.day}`;
 };
 
-const seasonFor = () => {
-  const d = new Date();
-  const year = d.getUTCFullYear();
-  const month = d.getUTCMonth() + 1;
-  return month >= 7 ? year : year - 1;
-};
-
-function apiFootballHasData(payload) {
-  return (!payload?.errors || Object.keys(payload.errors).length === 0) && Array.isArray(payload?.response) && payload.response.length > 0;
+async function cachedUpstream(url, ttl, token, extraHeaders = {}) {
+  const request = new Request(url.toString(), { method: 'GET' });
+  const cached = await caches.default.match(request);
+  if (cached) return cached;
+  const response = await fetch(request, {
+    headers: { accept: 'application/json', ...(token ? { 'X-Auth-Token': token } : {}), ...extraHeaders }
+  });
+  const body = await response.text();
+  if (!response.ok) return new Response(body, {
+    status: response.status,
+    headers: { 'content-type': response.headers.get('content-type') || 'application/json' }
+  });
+  const cachedResponse = new Response(body, {
+    status: 200,
+    headers: { 'content-type': 'application/json; charset=UTF-8', 'cache-control': `public, max-age=${ttl}` }
+  });
+  await caches.default.put(request, cachedResponse.clone());
+  return cachedResponse;
 }
 
-// The frontend consumes this small, stable shape. API-Football's native response is
-// deliberately mapped here so UI code never has to know about response[0].teams, etc.
-function normalizeFixtures(payload, leagueName = '') {
+async function footballData(env, url, ttl, extraHeaders = {}) {
+  if (!env.FOOTBALL_DATA_API_KEY) return null;
+  return cachedUpstream(url, ttl, env.FOOTBALL_DATA_API_KEY, extraHeaders);
+}
+
+function normalizeMatch(m, leagueName) {
+  const status = m.status || 'SCHEDULED';
+  const live = ['LIVE', 'IN_PLAY', 'PAUSED'].includes(status);
+  const finished = ['FINISHED', 'POSTPONED', 'SUSPENDED', 'CANCELLED'].includes(status);
   return {
-    events: (payload?.response || []).map(f => {
-      const home = f.teams?.home || {};
-      const away = f.teams?.away || {};
-      const status = f.fixture?.status || {};
-      const short = status.short || 'NS';
-      const liveStatuses = ['1H', 'HT', '2H', 'ET', 'P', 'BT', 'LIVE'];
-      const preStatuses = ['NS', 'TBD'];
-      const state = preStatuses.includes(short) ? 'pre' : liveStatuses.includes(short) ? 'in' : 'post';
-      return {
-        id: String(f.fixture?.id || ''),
-        date: f.fixture?.date || '',
-        status: status.long || short || 'Scheduled',
-        state,
-        league: leagueName || f.league?.name || '',
-        home: {
-          id: home.id ?? null,
-          name: home.name || 'تیم میزبان',
-          short: home.name || '',
-          logo: home.logo || '',
-          score: f.goals?.home ?? 0
-        },
-        away: {
-          id: away.id ?? null,
-          name: away.name || 'تیم مهمان',
-          short: away.name || '',
-          logo: away.logo || '',
-          score: f.goals?.away ?? 0
-        }
-      };
-    }).filter(e => e.id)
+    id: String(m.id || ''),
+    date: m.utcDate || '',
+    status: live ? (m.minute ? `${m.minute}'` : status) : status === 'FINISHED' ? 'پایان بازی' : status === 'SCHEDULED' ? 'برنامه‌ریزی‌شده' : status,
+    state: live ? 'in' : finished ? 'post' : 'pre',
+    league: leagueName || m.competition?.name || '',
+    home: {
+      id: m.homeTeam?.id ?? null,
+      name: m.homeTeam?.name || m.homeTeam?.shortName || 'تیم میزبان',
+      short: m.homeTeam?.shortName || m.homeTeam?.name || '',
+      logo: m.homeTeam?.crest || '',
+      score: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? 0
+    },
+    away: {
+      id: m.awayTeam?.id ?? null,
+      name: m.awayTeam?.name || m.awayTeam?.shortName || 'تیم مهمان',
+      short: m.awayTeam?.shortName || m.awayTeam?.name || '',
+      logo: m.awayTeam?.crest || '',
+      score: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? 0
+    }
   };
 }
 
 function normalizeStandings(payload) {
-  const groups = payload?.response?.[0]?.league?.standings || [];
-  const entries = groups.flat ? groups.flat() : (groups[0] || []);
-  return {
-    standings: entries.map(e => ({
-      rank: e.rank,
-      team: { id: e.team?.id ?? null, name: e.team?.name || '', logo: e.team?.logo || '' },
-      all: {
-        played: e.all?.played ?? 0,
-        goals: { for: e.all?.goals?.for ?? 0, against: e.all?.goals?.against ?? 0 }
-      },
-      points: e.points ?? 0,
-      form: e.form || '',
-      description: e.description || '',
-      status: e.status || 'same'
-    }))
-  };
-}
-
-function normalizeEspnEvents(payload, leagueName) {
-  return {
-    events: (payload?.events || []).map(e => {
-      const c = e.competitions?.[0] || {};
-      const teams = c.competitors || [];
-      const home = teams.find(x => x.homeAway === 'home') || teams[0] || {};
-      const away = teams.find(x => x.homeAway === 'away') || teams[1] || {};
-      const state = e.status?.type?.state === 'in' ? 'in' : e.status?.type?.completed ? 'post' : 'pre';
-      return {
-        id: String(e.id || ''),
-        date: e.date || '',
-        status: e.status?.type?.shortDetail || e.status?.type?.description || '',
-        state,
-        league: leagueName,
-        home: {
-          id: home.team?.id ?? null,
-          name: home.team?.displayName || 'تیم میزبان',
-          short: home.team?.shortDisplayName || home.team?.displayName || '',
-          logo: home.team?.logos?.[0]?.href || home.team?.logo || '',
-          score: Number(home.score ?? 0)
-        },
-        away: {
-          id: away.team?.id ?? null,
-          name: away.team?.displayName || 'تیم مهمان',
-          short: away.team?.shortDisplayName || away.team?.displayName || '',
-          logo: away.team?.logos?.[0]?.href || away.team?.logo || '',
-          score: Number(away.score ?? 0)
-        }
-      };
-    }).filter(e => e.id)
-  };
-}
-
-function normalizeEspnStandings(payload) {
-  const rows = [];
-  const entries = payload?.children?.flatMap(c => c.standings?.entries || []) || payload?.standings?.entries || [];
-  for (const e of entries) {
-    const stats = Object.fromEntries((e.stats || []).map(s => [s.name || s.abbreviation, s.value]));
-    rows.push({
-      rank: Number(e.position || stats.rank || rows.length + 1),
-      team: { name: e.team?.displayName || '', logo: e.team?.logos?.[0]?.href || '' },
-      all: { played: Number(stats.gamesPlayed || stats.p || 0), goals: { for: Number(stats.pointsFor || 0), against: Number(stats.pointsAgainst || 0) } },
-      points: Number(stats.points || 0)
-    });
-  }
-  return { standings: rows };
-}
-
-function normalizeNews(payload) {
-  return {
-    articles: (payload?.articles || []).map(a => ({
-      headline: a.headline || a.title || 'خبر فوتبال',
-      description: a.description || a.summary || '',
-      published: a.published || a.publishedAt || '',
-      image: a.images?.[0]?.url || a.images?.[0]?.data?.url || '',
-      link: a.links?.web?.href || a.link || '#'
-    }))
-  };
-}
-
-async function cachedUpstream(request, ttl, headers = {}) {
-  const cached = await caches.default.match(request);
-  if (cached) return cached;
-  const r = await fetch(request, { headers });
-  if (!r.ok) return null;
-  const text = await r.text();
-  await caches.default.put(request, new Response(text, {
-    status: 200,
-    headers: { 'content-type': 'application/json; charset=UTF-8', 'cache-control': `public, max-age=${ttl}` }
-  }));
-  return new Response(text, { status: 200, headers: { 'content-type': 'application/json; charset=UTF-8' } });
-}
-
-async function apiFootball(env, url, ttl) {
-  if (!env.API_FOOTBALL_KEY) return null;
-  return cachedUpstream(new Request(url.toString()), ttl, {
-    'x-apisports-key': env.API_FOOTBALL_KEY,
-    accept: 'application/json'
-  });
-}
-
-async function espn(url, ttl) {
-  return cachedUpstream(new Request(url.toString()), ttl, { accept: 'application/json' });
+  const table = payload?.standings?.find(x => x.type === 'TOTAL')?.table || payload?.standings?.[0]?.table || [];
+  return { standings: table.map(e => ({
+    rank: e.position ?? 0,
+    team: { id: e.team?.id ?? null, name: e.team?.shortName || e.team?.name || '', logo: e.team?.crest || '' },
+    all: { played: e.playedGames ?? 0, goals: { for: e.goalsFor ?? 0, against: e.goalsAgainst ?? 0 } },
+    points: e.points ?? 0,
+    form: e.form || ''
+  })) };
 }
 
 async function football(request, env) {
@@ -188,77 +98,38 @@ async function football(request, env) {
   const route = parts[0] || '';
 
   if (route === 'health') {
-    return json({ ok: true, primary: 'API-Football', fallback: 'ESPN', keyConfigured: Boolean(env.API_FOOTBALL_KEY), season: seasonFor(), date: tehranDate() });
+    return json({ ok: true, provider: 'football-data.org', keyConfigured: Boolean(env.FOOTBALL_DATA_API_KEY), date: tehranDate() });
   }
 
   if (route === 'live') {
-    const r = await apiFootball(env, new URL(`${API_BASE}/fixtures?live=all`), CACHE_SECONDS.live);
-    if (r) {
-      const payload = await r.json();
-      const ids = new Set(Object.values(LEAGUES).map(x => String(x.id)));
-      if (apiFootballHasData(payload)) {
-        const filtered = { ...payload, response: (payload.response || []).filter(f => ids.has(String(f.league?.id))) };
-        if (filtered.response.length) return json(normalizeFixtures(filtered), 200, CACHE_SECONDS.live);
-      }
-    }
-
-    const out = await Promise.all(Object.values(LEAGUES).map(async league => {
-      const r2 = await espn(new URL(`${ESPN_BASE}/${league.espn}/scoreboard?limit=100`), CACHE_SECONDS.live);
-      if (!r2) return [];
-      return normalizeEspnEvents(await r2.json(), league.name).events.filter(e => e.state === 'in');
-    }));
-    return json({ events: out.flat() }, 200, CACHE_SECONDS.live);
+    const r = await footballData(env, `${API_BASE}/matches?status=IN_PLAY`, CACHE_SECONDS.live);
+    if (!r) return json({ events: [], error: 'FOOTBALL_DATA_API_KEY is not configured' }, 503);
+    const payload = await r.json();
+    if (!Array.isArray(payload.matches)) return json({ events: [], error: 'Invalid provider response' }, 502);
+    const allowed = new Set(Object.values(LEAGUES).map(x => x.code));
+    return json({ events: payload.matches.filter(m => allowed.has(m.competition?.code)).map(m => normalizeMatch(m)) }, 200, CACHE_SECONDS.live);
   }
 
   const league = LEAGUES[route];
   if (!league) return json({ error: 'Unknown league', available: Object.keys(LEAGUES) }, 404);
 
-  if (parts[1] === 'news') {
-    const r = await espn(new URL(`${ESPN_BASE}/${league.espn}/news?limit=12`), CACHE_SECONDS.news);
-    return r ? json(normalizeNews(await r.json()), 200, CACHE_SECONDS.news) : json({ articles: [] }, 200, CACHE_SECONDS.news);
-  }
-
   if (parts[1] === 'standings') {
-    const api = new URL(`${API_BASE}/standings`);
-    api.searchParams.set('league', String(league.id));
-    api.searchParams.set('season', String(seasonFor()));
-    const r = await apiFootball(env, api, CACHE_SECONDS.standings);
-    if (r) {
-      const payload = await r.json();
-      if (apiFootballHasData(payload)) {
-        const normalized = normalizeStandings(payload);
-        if (normalized.standings.length) return json(normalized, 200, CACHE_SECONDS.standings);
-      }
-    }
-    const r2 = await espn(new URL(`${ESPN_BASE}/${league.espn}/standings`), CACHE_SECONDS.standings);
-    if (r2) {
-      const normalized = normalizeEspnStandings(await r2.json());
-      if (normalized.standings.length) return json(normalized, 200, CACHE_SECONDS.standings);
-    }
-    return json({ standings: [], error: 'No standings provider available' }, 503);
-  }
-
-  const api = new URL(`${API_BASE}/fixtures`);
-  api.searchParams.set('league', String(league.id));
-  api.searchParams.set('season', String(seasonFor()));
-  api.searchParams.set('from', tehranDate());
-  api.searchParams.set('to', tehranDate(7));
-  api.searchParams.set('timezone', 'Asia/Tehran');
-  const r = await apiFootball(env, api, CACHE_SECONDS.fixtures);
-  if (r) {
+    const r = await footballData(env, `${API_BASE}/competitions/${league.code}/standings`, CACHE_SECONDS.standings);
+    if (!r) return json({ standings: [], error: 'FOOTBALL_DATA_API_KEY is not configured' }, 503);
     const payload = await r.json();
-    if (apiFootballHasData(payload)) {
-      const normalized = normalizeFixtures(payload, league.name);
-      if (normalized.events.length) return json(normalized, 200, CACHE_SECONDS.fixtures);
-    }
+    if (!r.ok) return json({ standings: [], error: payload?.message || 'Provider error' }, r.status);
+    return json(normalizeStandings(payload), 200, CACHE_SECONDS.standings);
   }
 
-  const r2 = await espn(new URL(`${ESPN_BASE}/${league.espn}/scoreboard?limit=100`), CACHE_SECONDS.fixtures);
-  if (r2) {
-    const normalized = normalizeEspnEvents(await r2.json(), league.name);
-    if (normalized.events.length) return json(normalized, 200, CACHE_SECONDS.fixtures);
-  }
-  return json({ events: [], error: 'No fixtures provider available' }, 503);
+  if (parts[1] === 'news') return json({ articles: [] }, 200, 300);
+
+  const from = tehranDate();
+  const to = tehranDate(7);
+  const r = await footballData(env, `${API_BASE}/competitions/${league.code}/matches?dateFrom=${from}&dateTo=${to}`, CACHE_SECONDS.fixtures);
+  if (!r) return json({ events: [], error: 'FOOTBALL_DATA_API_KEY is not configured' }, 503);
+  const payload = await r.json();
+  if (!r.ok) return json({ events: [], error: payload?.message || 'Provider error' }, r.status);
+  return json({ events: (payload.matches || []).map(m => normalizeMatch(m, league.name)).filter(m => m.id) }, 200, CACHE_SECONDS.fixtures);
 }
 
 export default {
