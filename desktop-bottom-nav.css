@@ -1,8 +1,9 @@
-/* KICKORA floating bottom navigation — shared desktop + mobile polish */
+/* KICKORA floating bottom navigation — desktop + mobile */
 .mobile-bottom-nav{
   position:fixed;
   z-index:1000;
   left:50%;
+  right:auto;
   bottom:18px;
   transform:translateX(-50%);
   width:min(720px,calc(100vw - 48px));
@@ -17,59 +18,30 @@
   box-shadow:0 18px 50px rgba(0,0,0,.34),0 4px 18px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
   backdrop-filter:blur(24px) saturate(1.3);
   -webkit-backdrop-filter:blur(24px) saturate(1.3);
+  animation:kickora-nav-in .55s cubic-bezier(.22,1,.36,1) both;
 }
-.mobile-nav-item{
-  position:relative;
-  display:flex;
-  min-width:0;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-  height:52px;
-  padding:5px 8px;
-  border-radius:19px;
-  color:rgba(255,255,255,.58);
-  text-decoration:none;
-  transition:transform .22s ease,background .22s ease,color .22s ease,box-shadow .22s ease;
-}
-.mobile-nav-item img{width:22px;height:22px;display:block;object-fit:contain}
+.mobile-nav-item{position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:52px;padding:5px 8px;border-radius:19px;color:rgba(255,255,255,.58);text-decoration:none;transition:transform .22s ease,background .22s ease,color .22s ease,box-shadow .22s ease}
+.mobile-nav-item img{width:22px;height:22px;display:block;object-fit:contain;transition:transform .22s ease,filter .22s ease}
 .mobile-nav-item span{font-size:9px;font-weight:800;line-height:1;white-space:nowrap}
-.mobile-nav-item.active{
-  color:#fff;
-  background:linear-gradient(135deg,rgba(66,230,129,.18),rgba(255,122,24,.12));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 7px 20px rgba(0,0,0,.16);
-}
-.mobile-nav-item.active:after{
-  content:"";
-  position:absolute;
-  bottom:4px;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#42e681;
-  box-shadow:0 0 12px rgba(66,230,129,.9);
-}
+.mobile-nav-item.active{color:#fff;background:linear-gradient(135deg,rgba(66,230,129,.18),rgba(255,122,24,.12));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 7px 20px rgba(0,0,0,.16)}
+.mobile-nav-item.active img{transform:translateY(-1px) scale(1.05);filter:drop-shadow(0 0 7px rgba(66,230,129,.28))}
+.mobile-nav-item.active:after{content:"";position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:#42e681;box-shadow:0 0 12px rgba(66,230,129,.9)}
 .mobile-nav-item:hover{color:#fff;background:rgba(255,255,255,.07);transform:translateY(-2px)}
+.mobile-nav-item:hover img{transform:translateY(-1px) scale(1.04)}
 .mobile-nav-item:active{transform:scale(.94)}
 
-/* The desktop header already uses the full navigation; no hamburger/menu button is needed. */
+/* The floating bar replaces the need for a hamburger/menu control. */
 .site-header .hamburger,
 .site-header .menu-toggle,
 .site-header .mobile-menu-toggle,
+.site-header .hamburger-btn,
 .site-header [aria-label*="منو"],
-.site-header [aria-label*="menu"]{display:none!important}
+.site-header [aria-label*="menu"],
+.site-header [data-menu-toggle]{display:none!important}
 
+@media(min-width:821px){body{padding-bottom:92px}}
 @media(max-width:820px){
-  .mobile-bottom-nav{
-    left:12px;
-    right:12px;
-    bottom:12px;
-    transform:none;
-    width:auto;
-    padding:7px 8px calc(7px + env(safe-area-inset-bottom));
-    border-radius:25px;
-  }
+  .mobile-bottom-nav{left:12px;right:12px;bottom:12px;transform:none;width:auto;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border-radius:25px}
   .mobile-nav-item{height:48px;padding:4px 2px;border-radius:17px}
   .mobile-nav-item img{width:21px;height:21px}
   .mobile-nav-item span{font-size:8px}
@@ -80,3 +52,6 @@
   .mobile-nav-item img{width:20px;height:20px}
   .mobile-nav-item span{font-size:7.5px}
 }
+@keyframes kickora-nav-in{from{opacity:0;transform:translateX(-50%) translateY(18px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@media(max-width:820px){@keyframes kickora-nav-in{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}}
+@media(prefers-reduced-motion:reduce){.mobile-bottom-nav{animation:none}}
