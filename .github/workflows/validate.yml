@@ -1,4 +1,4 @@
-name: Validate KICKORA
+name: Validate KICKORAX
 on:
   push:
     branches: [main]
@@ -12,7 +12,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check JavaScript syntax
-        run: node --check app.js
+      - name: Check active JavaScript syntax
+        run: |
+          node --check app-fixed.js
+          node --check functions/api/football.js
+          node --check live-refresh.js
+          node --check news-translate.js
+          node --check pwa.js
       - name: Check required files
-        run: test -f index.html && test -f styles.css && test -f app.js && test -f asesst/file_00000000e5188211990fe904071ae2c6.png
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f brand.css
+          test -f font.css
+          test -f app-fixed.js
+          test -f functions/api/football.js
+          test -f manifest.webmanifest
