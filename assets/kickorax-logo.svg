@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" role="img" aria-labelledby="title desc">
+  <title id="title">KICKORAX logo</title>
+  <desc id="desc">Modern football logo combining a stylized KX monogram with the KICKORAX wordmark.</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9b72"/>
+      <stop offset="0.48" stop-color="#ff6b35"/>
+      <stop offset="1" stop-color="#ff3d16"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(18 18)">
+    <rect width="184" height="184" rx="48" fill="#10131a" stroke="#2b3341" stroke-width="4"/>
+    <path d="M48 54h27v28l32-28h39l-40 37 43 39h-40L75 103v27H48z" fill="url(#g)" filter="url(#glow)"/>
+    <path d="M126 57l27 27-27 27-27-27z" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="5"/>
+    <circle cx="139.5" cy="84" r="7" fill="#fff" fill-opacity=".9"/>
+  </g>
+  <g transform="translate(236 0)">
+    <text x="0" y="127" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="900" letter-spacing="3" fill="#f5f7fb">KICKORAX</text>
+    <path d="M5 151h470" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/>
+    <text x="4" y="185" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="700" letter-spacing="7" fill="#8d96a8">FOOTBALL • DATA • LIVE</text>
+  </g>
+</svg>
