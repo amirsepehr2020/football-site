@@ -1,5 +1,5 @@
-/* KICKORA font system: reliable Persian typography on mobile. */
-@import url('https://fonts.googleapis.com/css2?family=Estedad:wght@400;500;600;700;800;900&display=swap');
+/* KICKORAX typography: Vazirmatn only. */
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap');
 
 :root,
 body,
@@ -7,7 +7,7 @@ button,
 input,
 textarea,
 select {
-  font-family: 'Estedad', Tahoma, Arial, sans-serif;
+  font-family: 'Vazirmatn';
 }
 
 html {
