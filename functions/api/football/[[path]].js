@@ -8,11 +8,7 @@ const LEAGUES = {
 };
 
 const API_BASE = 'https://v3.football.api-sports.io';
-const CACHE_SECONDS = {
-  fixtures: 60,
-  standings: 900,
-  teams: 21600
-};
+const CACHE_SECONDS = { fixtures: 60, standings: 900 };
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -36,32 +32,33 @@ function todayUTC() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function cacheKey(request) {
-  return new Request(request.url, request);
+function cacheKey(request, url) {
+  return new Request(url.toString(), request);
 }
 
-async function apiFootballFetch(request, url, cacheSeconds) {
+async function apiFootballFetch(context, url, cacheSeconds) {
   const cache = caches.default;
-  const key = cacheKey(request);
+  const key = cacheKey(context.request, url);
   const cached = await cache.match(key);
   if (cached) return cached;
 
-  const apiKey = request.env?.API_FOOTBALL_KEY;
+  const apiKey = context.env?.API_FOOTBALL_KEY;
   if (!apiKey) return json({ error: 'API_FOOTBALL_KEY is not configured' }, 503);
 
   const upstream = await fetch(url, {
     headers: { 'x-apisports-key': apiKey, accept: 'application/json' }
   });
-
   const body = await upstream.text();
-  const headers = {
-    'content-type': 'application/json; charset=UTF-8',
-    'cache-control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
-    'access-control-allow-origin': '*'
-  };
+  const response = new Response(body, {
+    status: upstream.status,
+    headers: {
+      'content-type': 'application/json; charset=UTF-8',
+      'cache-control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
+      'access-control-allow-origin': '*'
+    }
+  });
 
-  const response = new Response(body, { status: upstream.status, headers });
-  if (upstream.ok) request.waitUntil(cache.put(key, response.clone()));
+  if (upstream.ok) context.waitUntil(cache.put(key, response.clone()));
   return response;
 }
 
@@ -72,38 +69,17 @@ function normalizeFixtures(payload, leagueName) {
       const away = fixture.teams?.away || {};
       const status = fixture.fixture?.status || {};
       const state = status.short === 'NS' ? 'pre' :
-        ['1H', '2H', 'ET', 'P', 'LIVE'].includes(status.short) ? 'in' : 'post';
+        ['1H', '2H', 'ET', 'P', 'LIVE', 'HT'].includes(status.short) ? 'in' : 'post';
 
       return {
         id: String(fixture.fixture?.id || ''),
         date: fixture.fixture?.date,
-        status: {
-          type: {
-            state,
-            shortDetail: status.long || status.short || 'Scheduled'
-          }
-        },
+        status: { type: { state, shortDetail: status.long || status.short || 'Scheduled' } },
         competitions: [{
           venue: { fullName: fixture.fixture?.venue?.name || '' },
           competitors: [
-            {
-              homeAway: 'home',
-              score: String(fixture.goals?.home ?? 0),
-              team: {
-                displayName: home.name || 'تیم میزبان',
-                shortDisplayName: home.name || '',
-                logo: home.logo || ''
-              }
-            },
-            {
-              homeAway: 'away',
-              score: String(fixture.goals?.away ?? 0),
-              team: {
-                displayName: away.name || 'تیم مهمان',
-                shortDisplayName: away.name || '',
-                logo: away.logo || ''
-              }
-            }
+            { homeAway: 'home', score: String(fixture.goals?.home ?? 0), team: { displayName: home.name || 'تیم میزبان', shortDisplayName: home.name || '', logo: home.logo || '' } },
+            { homeAway: 'away', score: String(fixture.goals?.away ?? 0), team: { displayName: away.name || 'تیم مهمان', shortDisplayName: away.name || '', logo: away.logo || '' } }
           ]
         }],
         league: { name: leagueName }
@@ -113,20 +89,15 @@ function normalizeFixtures(payload, leagueName) {
 }
 
 function normalizeStandings(payload) {
-  const entries = payload.response?.[0]?.league?.standings?.[0] || [];
+  const groups = payload.response?.[0]?.league?.standings || [];
+  const entries = groups.flat ? groups.flat() : (groups[0] || []);
   return {
     standings: entries.map((entry) => ({
       rank: entry.rank,
-      team: {
-        name: entry.team?.name || '',
-        logo: entry.team?.logo || ''
-      },
+      team: { name: entry.team?.name || '', logo: entry.team?.logo || '' },
       all: {
         played: entry.all?.played ?? 0,
-        goals: {
-          for: entry.all?.goals?.for ?? 0,
-          against: entry.all?.goals?.against ?? 0
-        }
+        goals: { for: entry.all?.goals?.for ?? 0, against: entry.all?.goals?.against ?? 0 }
       },
       points: entry.points ?? 0
     }))
@@ -138,12 +109,9 @@ export async function onRequestGet(context) {
   const path = Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath || '');
   const parts = path.split('/').filter(Boolean);
   const league = LEAGUES[parts[0]];
-
   if (!league) return json({ error: 'Unknown league' }, 404);
 
   if (parts[1] === 'news') {
-    // API-Football is a football-data API, not a news feed.
-    // Keep the existing KICKORA fallback news UI instead of mixing providers.
     return json({ articles: [] }, 200, { cacheControl: 'public, max-age=600, s-maxage=600' });
   }
 
@@ -158,16 +126,14 @@ export async function onRequestGet(context) {
     url.searchParams.set('status', 'NS-1H-HT-2H-ET-P-BT');
     const upstream = await apiFootballFetch(context, url, CACHE_SECONDS.fixtures);
     if (!upstream.ok) return upstream;
-    const payload = await upstream.json();
-    return json(normalizeFixtures(payload, league.name), 200, {
+    return json(normalizeFixtures(await upstream.json(), league.name), 200, {
       cacheControl: `public, max-age=${CACHE_SECONDS.fixtures}, s-maxage=${CACHE_SECONDS.fixtures}`
     });
   }
 
   const upstream = await apiFootballFetch(context, url, CACHE_SECONDS.standings);
   if (!upstream.ok) return upstream;
-  const payload = await upstream.json();
-  return json(normalizeStandings(payload), 200, {
+  return json(normalizeStandings(await upstream.json()), 200, {
     cacheControl: `public, max-age=${CACHE_SECONDS.standings}, s-maxage=${CACHE_SECONDS.standings}`
   });
 }
