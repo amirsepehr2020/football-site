@@ -73,7 +73,7 @@ function normalizeEvents(data, leagueName = '') {
     const away = comps.find(x => x.homeAway === 'away') || comps[1] || {};
     return {
       id: e.id,
-      league: leagueName,
+      league: leagueName || e.league?.name || '',
       date: e.date,
       venue: c?.venue?.fullName || '',
       status: translateStatus(e.status?.type?.shortDetail || e.status?.type?.detail),
@@ -88,10 +88,25 @@ async function loadMatches() {
   const results = await Promise.all(leagues.map(async ([id, name]) => {
     try { return normalizeEvents(await getJson(`${API}/${id}/scoreboard?limit=8`), name); } catch { return []; }
   }));
-  matchData = results.flat().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const fresh = results.flat();
+  if (fresh.length) matchData = fresh.sort((a, b) => new Date(a.date) - new Date(b.date));
   renderMatches('all');
   renderScoreList();
   updateTicker();
+}
+
+async function loadLive() {
+  try {
+    const live = normalizeEvents(await getJson(`${API}/live`));
+    const ids = new Set(live.map(x => x.id));
+    matchData = matchData.filter(x => !ids.has(x.id) || x.state === 'in');
+    const byId = new Map(matchData.map(x => [x.id, x]));
+    live.forEach(x => byId.set(x.id, x));
+    matchData = [...byId.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
+    renderMatches('all');
+    renderScoreList();
+    updateTicker();
+  } catch {}
 }
 
 function matchHTML(m) {
@@ -160,20 +175,21 @@ function renderMedia() {
     'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=900&q=80'
   ];
   $('#videoGrid').innerHTML = imgs.slice(0, 3).map((x, i) => `<article class="video-card" style="background-image:url('${x}')"><span class="play">▶</span><h3>${['خلاصه و لحظات مهم مسابقات فوتبال', 'بهترین گل‌های هفته فوتبال اروپا', 'حرکات برتر و صحنه‌های ماندگار'][i]}</h3></article>`).join('');
-  $('#galleryGrid').innerHTML = imgs.map((x, i) => `<div class="gallery-item" style="background-image:url('${x}')"><span>${['ستاره‌های فوتبال', 'شب بزرگ فوتبال اروپا', 'هیجان در استادیوم', 'لحظه‌های فراموش‌نشدنی'][i]}</span></div>`).join('');
+  $('#galleryGrid').innerHTML = imgs.map((x, i) => `<div class="gallery-item" style="background-image:url('${x}')"><span>${['ستاره‌های فوتبال', 'شب بزرگ فوتبال اروپا', 'هیجان در استادیوم', 'لحظه‌های خاص'][i]}</span></div>`).join('');
 }
 
 function updateTicker() {
-  const live = matchData.filter(m => m.state === 'in');
-  $('#tickerTrack').textContent = live.length ? live.map(m => `${m.home.short || m.home.name} ${m.home.score} - ${m.away.score} ${m.away.short || m.away.name}`).join('  •  ') : 'کیکورا؛ نتایج و برنامه مسابقات فوتبال امروز را لحظه‌ای دنبال کن.';
+  const live = matchData.find(m => m.state === 'in');
+  const next = matchData.find(m => m.state === 'pre');
+  $('#tickerText').textContent = live ? `${live.home.name} ${live.home.score} - ${live.away.score} ${live.away.name} · ${live.status}` : next ? `بازی بعدی: ${next.home.name} - ${next.away.name} · ${formatTime(next.date)}` : 'مرکز مسابقات کیکورا آماده است';
 }
 
 function toast(text) {
-  const el = $('#toast');
-  if (!el) return;
-  el.textContent = text;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
 }
 
 function setup() {
@@ -181,10 +197,14 @@ function setup() {
   renderMedia();
   loadNews();
   loadMatches();
+  loadLive();
   loadStandings();
 
-  setInterval(loadMatches, 60000);
-  setInterval(loadStandings, 900000);
+  // API-Football free quota is 100 requests/day. Schedule data is heavily cached server-side;
+  // live data uses a single aggregated endpoint instead of six separate league calls.
+  setInterval(loadLive, 20 * 60 * 1000);
+  setInterval(loadMatches, 12 * 60 * 60 * 1000);
+  setInterval(loadStandings, 24 * 60 * 60 * 1000);
 
   $$('[data-scroll]').forEach(b => b.addEventListener('click', () => document.querySelector(b.dataset.scroll)?.scrollIntoView({ behavior: 'smooth' })));
   $$('.filter').forEach(b => b.addEventListener('click', () => { $$('.filter').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderMatches(b.dataset.league); }));
