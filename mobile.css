@@ -1,6 +1,6 @@
 /* KICKORAX mobile layout overrides. Desktop styles remain untouched. */
 html,body{max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{font-family:'Estedad',Tahoma,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
 @media (max-width:820px){
   .site-header{height:60px;padding:0 12px;gap:10px}
