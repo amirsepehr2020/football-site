@@ -1,15 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">KICKORAX</title>
-  <desc id="desc">KICKORAX football monogram icon without wordmark.</desc>
+  <title id="title">KICKORAX football K logo</title>
+  <desc id="desc">A clean orange K monogram inspired by a football, without a wordmark.</desc>
   <defs>
-    <linearGradient id="g" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ff9b72"/><stop offset="0.48" stop-color="#ff6b35"/><stop offset="1" stop-color="#ff3d16"/>
+    <linearGradient id="orange" x1="20" y1="10" x2="108" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB15C"/>
+      <stop offset="0.42" stop-color="#FF7A24"/>
+      <stop offset="1" stop-color="#F04412"/>
     </linearGradient>
-    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="shine" x1="28" y1="18" x2="96" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF3E7" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#FFD3A8" stop-opacity=".12"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#F04412" flood-opacity=".28"/>
+    </filter>
   </defs>
-  <g filter="url(#glow)">
-    <path d="M28 18h48l-10 18H48L37 55h25L51 73H27l-7 13c-5 9 1 18 11 18h28l-10 18H27c-20 0-32-19-22-37L28 18Z" fill="url(#g)"/>
-    <path d="M72 18h24l-17 30 20 38c7 13-3 28-18 28H57l10-18h13l-12-24H45l11-19h23L72 18Z" fill="url(#g)"/>
-    <circle cx="94" cy="24" r="6" fill="#fff" opacity=".92"/>
-  </g>
+
+  <!-- Football silhouette -->
+  <circle cx="64" cy="64" r="48" fill="#10131A" stroke="url(#orange)" stroke-width="6" filter="url(#shadow)"/>
+
+  <!-- Subtle football-panel geometry -->
+  <path d="M64 20 83 34 76 57 52 57 45 34Z" fill="none" stroke="url(#shine)" stroke-width="3.5" stroke-linejoin="round" opacity=".7"/>
+  <path d="m45 34-22 19M83 34l22 19M52 57 32 91M76 57l20 34M52 57 39 79M76 57l13 22" fill="none" stroke="#FF7A24" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+
+  <!-- Strong K monogram integrated into the ball -->
+  <path d="M45 31v66M45 64l38-32M45 64l40 33" fill="none" stroke="url(#orange)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M45 31v66" fill="none" stroke="#FFF7F0" stroke-opacity=".18" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Football seam accents -->
+  <path d="M64 20v10M23 53l10 4M105 53l-10 4M32 91l10-6M96 91l-10-6" stroke="#FFB15C" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+
+  <!-- Small highlight for app/favicon legibility -->
+  <circle cx="92" cy="34" r="4" fill="#FFF" opacity=".9"/>
 </svg>
