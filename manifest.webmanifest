@@ -13,16 +13,10 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/asesst/file_00000000e5188211990fe904071ae2c6.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/asesst/file_00000000e5188211990fe904071ae2c6.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/assets/kickorax-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
