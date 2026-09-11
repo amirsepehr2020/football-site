@@ -1,0 +1,213 @@
+const API = '/api/football';
+const leagues = [
+  ['eng.1', 'لیگ برتر انگلیس'],
+  ['esp.1', 'لالیگا'],
+  ['ita.1', 'سری آ ایتالیا'],
+  ['ger.1', 'بوندس‌لیگا'],
+  ['fra.1', 'لیگ یک فرانسه'],
+  ['uefa.champions', 'لیگ قهرمانان اروپا']
+];
+
+const fallbackNews = [
+  { headline: 'آخرین تحولات فوتبال اروپا؛ فصل جدید وارد مرحله‌ای هیجان‌انگیز شد', description: 'مهم‌ترین خبرها و اتفاقات روز فوتبال اروپا را در یک صفحه دنبال کنید.', published: 'همین حالا', image: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=900&q=80' },
+  { headline: 'ستاره‌های بزرگ آماده هفته جدید فوتبال هستند', description: 'برنامه مسابقات، فرم تیم‌ها و اتفاقات مهم را قبل از شروع بازی‌ها ببینید.', published: 'امروز', image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=900&q=80' },
+  { headline: 'نبردهای حساس لیگ‌های بزرگ اروپا نزدیک است', description: 'جدول، نتایج و آمار تیم‌های محبوب را در مرکز مسابقات دنبال کنید.', published: 'امروز', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=900&q=80' },
+  { headline: 'پنجره نقل‌وانتقالات و آخرین شایعات داغ فوتبال', description: 'مهم‌ترین خبرهای نقل‌وانتقالاتی را با روایت کوتاه و خواندنی دنبال کنید.', published: 'امروز', image: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=900&q=80' },
+  { headline: 'فوتبال ملی و باشگاهی؛ هفته‌ای پر از مسابقه در راه است', description: 'تقویم مهم بازی‌های پیش‌رو را از دست ندهید.', published: 'امروز', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=900&q=80' },
+  { headline: 'آمارهای جذاب این هفته از دنیای فوتبال', description: 'از گلزن‌ها تا بهترین فرم تیم‌ها؛ داده‌های جذاب فوتبال را مرور کنید.', published: 'دیروز', image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=900&q=80' }
+];
+
+const teams = [
+  ['رئال مادرید', 'https://media.api-sports.io/football/teams/541.png'],
+  ['بارسلونا', 'https://media.api-sports.io/football/teams/529.png'],
+  ['منچسترسیتی', 'https://media.api-sports.io/football/teams/50.png'],
+  ['لیورپول', 'https://media.api-sports.io/football/teams/40.png'],
+  ['منچستریونایتد', 'https://media.api-sports.io/football/teams/33.png'],
+  ['بایرن مونیخ', 'https://media.api-sports.io/football/teams/157.png'],
+  ['اینتر', 'https://media.api-sports.io/football/teams/505.png'],
+  ['آرسنال', 'https://media.api-sports.io/football/teams/42.png'],
+  ['چلسی', 'https://media.api-sports.io/football/teams/49.png']
+];
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+let newsData = [...fallbackNews];
+let matchData = [];
+let standingsData = [];
+
+function esc(s = '') {
+  return String(s).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+}
+
+function formatTime(date) {
+  try { return new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' }).format(new Date(date)); } catch { return ''; }
+}
+
+function formatDate(date) {
+  try { return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(date)); } catch { return 'امروز'; }
+}
+
+async function getJson(url) {
+  const r = await fetch(url, { headers: { accept: 'application/json' } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function translateStatus(value = '') {
+  const s = String(value).toLowerCase();
+  if (s.includes('postponed')) return 'به تعویق افتاده';
+  if (s.includes('cancel')) return 'لغو شده';
+  if (s.includes('half')) return 'پایان نیمه اول';
+  if (s.includes('finish') || s.includes('final')) return 'پایان بازی';
+  if (s.includes('extra')) return 'وقت اضافه';
+  if (s.includes('penalty')) return 'ضربات پنالتی';
+  if (s.includes('scheduled') || s.includes('not started')) return 'برنامه‌ریزی‌شده';
+  return value || 'در انتظار';
+}
+
+function normalizeEvents(data, leagueName = '') {
+  return (data.events || []).map(e => {
+    const c = e.competitions?.[0];
+    const comps = c?.competitors || [];
+    const home = comps.find(x => x.homeAway === 'home') || comps[0] || {};
+    const away = comps.find(x => x.homeAway === 'away') || comps[1] || {};
+    return {
+      id: e.id,
+      league: leagueName,
+      date: e.date,
+      venue: c?.venue?.fullName || '',
+      status: translateStatus(e.status?.type?.shortDetail || e.status?.type?.detail),
+      state: e.status?.type?.state,
+      home: { name: home.team?.displayName || 'تیم میزبان', short: home.team?.shortDisplayName || '', logo: home.team?.logo || '', score: home.score ?? '0' },
+      away: { name: away.team?.displayName || 'تیم مهمان', short: away.team?.shortDisplayName || '', logo: away.team?.logo || '', score: away.score ?? '0' }
+    };
+  });
+}
+
+async function loadMatches() {
+  const results = await Promise.all(leagues.map(async ([id, name]) => {
+    try { return normalizeEvents(await getJson(`${API}/${id}/scoreboard?limit=8`), name); } catch { return []; }
+  }));
+  matchData = results.flat().sort((a, b) => new Date(a.date) - new Date(b.date));
+  renderMatches('all');
+  renderScoreList();
+  updateTicker();
+}
+
+function matchHTML(m) {
+  const live = m.state === 'in';
+  return `<article class="match-card"><div class="match-meta"><span>${esc(m.league)}</span><span>${live ? '● زنده' : formatTime(m.date)}</span></div><div class="match-teams"><div class="club"><img src="${esc(m.home.logo)}" alt="" onerror="this.style.visibility='hidden'"><strong>${esc(m.home.name)}</strong></div><div class="match-score">${m.state === 'pre' ? '—' : `${esc(m.home.score)} - ${esc(m.away.score)}`}<small>${esc(m.status)}</small></div><div class="club"><img src="${esc(m.away.logo)}" alt="" onerror="this.style.visibility='hidden'"><strong>${esc(m.away.name)}</strong></div></div></article>`;
+}
+
+function renderMatches(filter = 'all') {
+  const data = filter === 'all' ? matchData : matchData.filter(m => m.league === leagues.find(x => x[0] === filter)?.[1]);
+  $('#allMatches').innerHTML = data.length ? data.slice(0, 12).map(matchHTML).join('') : '<div class="empty-state">برای این رقابت امروز مسابقه‌ای پیدا نشد.</div>';
+  const live = matchData.filter(m => m.state === 'in').slice(0, 4);
+  $('#liveMatches').innerHTML = live.length ? live.map(m => `<div class="live-item"><div class="team"><strong>${esc(m.home.short || m.home.name)}</strong></div><div class="score">${esc(m.home.score)} - ${esc(m.away.score)}<small>● ${esc(m.status)}</small></div><div class="team"><strong>${esc(m.away.short || m.away.name)}</strong></div></div>`).join('') : '<div class="live-item"><div class="team"><strong>فعلاً بازی زنده‌ای پیدا نشد</strong></div><div class="score">—</div><div class="team">برنامه بعدی</div></div>';
+}
+
+function renderScoreList() {
+  const data = matchData.slice(0, 7);
+  $('#scoreList').innerHTML = data.length ? data.map(m => `<div class="score-row"><div class="home">${esc(m.home.short || m.home.name)}</div><div class="score-num">${m.state === 'pre' ? '—' : `${esc(m.home.score)}-${esc(m.away.score)}`}<small>${m.state === 'in' ? 'زنده' : formatTime(m.date)}</small></div><div class="away">${esc(m.away.short || m.away.name)}</div></div>`).join('') : '<div class="loading">داده‌ای برای امروز نیست.</div>';
+}
+
+async function loadNews() {
+  try {
+    const data = await getJson(`${API}/eng.1/news?limit=12`);
+    if (data.articles?.length) newsData = data.articles;
+  } catch {}
+  renderNews();
+  const n = newsData[0] || fallbackNews[0];
+  $('#heroTitle').textContent = n.headline;
+  $('#heroSummary').textContent = n.description;
+  $('#heroCard').style.backgroundImage = `linear-gradient(90deg,rgba(3,10,8,.96) 0%,rgba(3,10,8,.72) 45%,rgba(3,10,8,.12)),url('${n.image}')`;
+  $('#latestNews').innerHTML = newsData.slice(0, 5).map(newsMini).join('');
+}
+
+function newsMini(n) {
+  return `<a class="latest-item" href="${esc(n.link || '#')}" target="_blank" rel="noopener"><img src="${esc(n.image)}" alt="تصویر خبر" loading="lazy" onerror="this.src='${fallbackNews[0].image}'"><div><h3>${esc(n.headline)}</h3><small>${esc(n.published ? formatDate(n.published) : 'امروز')}</small></div></a>`;
+}
+
+function renderNews() {
+  $('#newsGrid').innerHTML = newsData.slice(0, 6).map(n => `<article class="news-card"><img src="${esc(n.image)}" alt="تصویر خبر" loading="lazy" onerror="this.src='${fallbackNews[0].image}'"><div class="news-card-body"><h3>${esc(n.headline)}</h3><p>${esc(n.description)}</p><div class="news-meta"><span>خبر فوتبال</span><span>● تازه</span></div></div></article>`).join('');
+}
+
+async function loadStandings() {
+  try {
+    const data = await getJson(`${API}/eng.1/standings`);
+    standingsData = data.standings || [];
+  } catch { standingsData = []; }
+  renderStandings();
+}
+
+function renderStandings() {
+  if (!standingsData.length) {
+    $('#standings').innerHTML = '<div class="loading">جدول لیگ در حال آماده‌سازی است.</div>';
+    return;
+  }
+  $('#standings').innerHTML = '<div class="table-row head"><span>رتبه</span><span>تیم</span><span>بازی</span><span>تفاضل</span><span>امتیاز</span></div>' + standingsData.slice(0, 8).map(e => `<div class="table-row"><span class="rank">${e.rank}</span><strong>${esc(e.team?.name || '')}</strong><span>${e.all?.played ?? 0}</span><span>${(e.all?.goals?.for ?? 0) - (e.all?.goals?.against ?? 0) >= 0 ? '+' : ''}${(e.all?.goals?.for ?? 0) - (e.all?.goals?.against ?? 0)}</span><span>${e.points ?? 0}</span></div>`).join('');
+}
+
+function renderTeams() {
+  $('#teamsRow').innerHTML = teams.map(t => `<a class="team-card" href="#matches"><img src="${esc(t[1])}" alt="${esc(t[0])}" onerror="this.style.opacity=.2"><span>${esc(t[0])}</span></a>`).join('');
+}
+
+function renderMedia() {
+  const imgs = [
+    'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1000&q=80',
+    'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=900&q=80'
+  ];
+  $('#videoGrid').innerHTML = imgs.slice(0, 3).map((x, i) => `<article class="video-card" style="background-image:url('${x}')"><span class="play">▶</span><h3>${['خلاصه و لحظات مهم مسابقات فوتبال', 'بهترین گل‌های هفته فوتبال اروپا', 'حرکات برتر و صحنه‌های ماندگار'][i]}</h3></article>`).join('');
+  $('#galleryGrid').innerHTML = imgs.map((x, i) => `<div class="gallery-item" style="background-image:url('${x}')"><span>${['ستاره‌های فوتبال', 'شب بزرگ فوتبال اروپا', 'هیجان در استادیوم', 'لحظه‌های فراموش‌نشدنی'][i]}</span></div>`).join('');
+}
+
+function updateTicker() {
+  const live = matchData.filter(m => m.state === 'in');
+  $('#tickerTrack').textContent = live.length ? live.map(m => `${m.home.short || m.home.name} ${m.home.score} - ${m.away.score} ${m.away.short || m.away.name}`).join('  •  ') : 'کیکورا؛ نتایج و برنامه مسابقات فوتبال امروز را لحظه‌ای دنبال کن.';
+}
+
+function toast(text) {
+  const el = $('#toast');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function setup() {
+  renderTeams();
+  renderMedia();
+  loadNews();
+  loadMatches();
+  loadStandings();
+
+  setInterval(loadMatches, 60000);
+  setInterval(loadStandings, 900000);
+
+  $$('[data-scroll]').forEach(b => b.addEventListener('click', () => document.querySelector(b.dataset.scroll)?.scrollIntoView({ behavior: 'smooth' })));
+  $$('.filter').forEach(b => b.addEventListener('click', () => { $$('.filter').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderMatches(b.dataset.league); }));
+
+  $('#themeBtn').onclick = () => {
+    document.body.classList.toggle('light');
+    localStorage.setItem('kickora-theme', document.body.classList.contains('light') ? 'light' : 'dark');
+  };
+  if (localStorage.getItem('kickora-theme') === 'light') document.body.classList.add('light');
+
+  $('#alertToggle').onclick = () => {
+    const on = $('#alertToggle').textContent === '●';
+    $('#alertToggle').textContent = on ? '○' : '●';
+    toast(on ? 'اعلان‌ها خاموش شد' : 'اعلان‌های کیکورا فعال شد');
+  };
+
+  $$('.tab').forEach(b => b.onclick = () => {
+    $$('.tab').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    if (b.dataset.news === 'popular') {
+      $('#newsGrid').innerHTML = [...newsData].reverse().slice(0, 6).map(n => `<article class="news-card"><img src="${esc(n.image)}" alt="تصویر خبر"><div class="news-card-body"><h3>${esc(n.headline)}</h3><p>${esc(n.description)}</p><div class="news-meta"><span>پربازدید</span><span>🔥</span></div></div></article>`).join('');
+    } else renderNews();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', setup);
