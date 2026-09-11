@@ -2,10 +2,16 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#06110d" />
   <meta name="description" content="کیکورا؛ مرجع جامع فوتبال، اخبار، نتایج زنده، جدول لیگ‌ها، تیم‌ها و ویدیوها." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KICKORA" />
   <title>KICKORA | کیکورا</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/asesst/file_00000000e5188211990fe904071ae2c6.png" />
   <link rel="icon" href="asesst/file_00000000e5188211990fe904071ae2c6.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,10 +37,10 @@
     <section class="two-column"><section id="news" class="content-section news-section"><div class="section-heading"><h2>جدیدترین مطالب</h2><div class="tabs"><button class="tab active" data-news="latest">جدیدترین</button><button class="tab" data-news="popular">پربازدید</button></div></div><div id="newsGrid" class="news-grid"></div></section><aside id="tables" class="content-section table-section"><div class="section-heading"><h2>جدول لیگ برتر</h2><button>کامل ←</button></div><div id="standings" class="standings"></div></aside></section>
     <section id="videos" class="content-section"><div class="section-heading"><h2>ویدیوهای منتخب</h2><button>همه ویدیوها ←</button></div><div class="video-grid" id="videoGrid"></div></section>
     <section id="gallery" class="content-section"><div class="section-heading"><h2>گالری فوتبال</h2><button>مشاهده گالری ←</button></div><div class="gallery-grid" id="galleryGrid"></div></section>
-    <section id="more" class="more-grid"><div class="feature-card"><div class="feature-icon">⚡</div><div><h3>هشدار گل و نتیجه</h3><p>رویدادهای مهم بازی‌ها را سریع‌تر از همیشه دنبال کن.</p></div><button class="toggle" id="alertToggle" aria-label="فعال کردن اعلان">○</button></div><div class="feature-card app-card"><div><small>KICKORA</small><h3>فوتبال همیشه همراه تو</h3><p>نسخه موبایل کیکورا به‌زودی.</p></div><div class="phone">K</div></div><div class="feature-card"><div><small>کیکورا پلاس</small><h3>تجربه کامل‌تر فوتبال</h3><p>پروفایل تیم‌ها، آمار بازیکنان، تاریخچه و داده‌های عمیق‌تر.</p></div><span class="plus-badge">PLUS</span></div></section>
+    <section id="more" class="more-grid"><div class="feature-card"><div class="feature-icon">⚡</div><div><h3>هشدار گل و نتیجه</h3><p>رویدادهای مهم بازی‌ها را سریع‌تر از همیشه دنبال کن.</p></div><button class="toggle" id="alertToggle" aria-label="فعال کردن اعلان">○</button></div><div class="feature-card app-card"><div><small>KICKORA</small><h3>فوتبال همیشه همراه تو</h3><p>کیکورا حالا به شکل یک PWA قابل نصب است.</p></div><div class="phone">K</div></div><div class="feature-card"><div><small>کیکورا پلاس</small><h3>تجربه کامل‌تر فوتبال</h3><p>پروفایل تیم‌ها، آمار بازیکنان، تاریخچه و داده‌های عمیق‌تر.</p></div><span class="plus-badge">PLUS</span></div></section>
   </main>
   <footer><div class="footer-brand"><img src="asesst/file_00000000e5188211990fe904071ae2c6.png" alt=""/><strong>KICKORA</strong></div><p>کیکورا؛ فوتبال را فقط دنبال نکن، زندگی‌اش کن.</p><div class="footer-links"><a href="#home">خانه</a><a href="#news">اخبار</a><a href="#matches">مسابقات</a><a href="#tables">جدول‌ها</a></div><small>© 2026 KICKORA</small></footer>
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script><script src="live-refresh.js"></script>
+  <script src="app.js"></script><script src="live-refresh.js"></script><script src="pwa.js"></script>
 </body>
 </html>
