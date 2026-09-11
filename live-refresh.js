@@ -1,11 +1,9 @@
-// KICKORA background refresh: refresh the same cached API layer used by the main app.
+// KICKORA live-only background refresh.
+// Match schedules and standings are refreshed by app-v2.js on long intervals;
+// this file must not create extra API-Football quota usage every few minutes.
 (() => {
-  const refresh = async () => {
-    try { if (typeof loadNews === 'function') await loadNews(); } catch {}
-    try { if (typeof loadMatches === 'function') await loadMatches(); } catch {}
-    try { if (typeof loadStandings === 'function') await loadStandings(); } catch {}
+  const refreshLive = async () => {
+    try { if (typeof loadLive === 'function') await loadLive(); } catch {}
   };
-
-  // app-v2.js performs the first load. This interval keeps the UI fresh afterwards.
-  setInterval(refresh, 5 * 60 * 1000);
+  setInterval(refreshLive, 20 * 60 * 1000);
 })();
