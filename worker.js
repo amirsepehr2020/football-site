@@ -28,7 +28,6 @@ const tehranDate = (offsetDays = 0) => {
     .formatToParts(d).reduce((o, p) => (o[p.type] = p.value, o), {});
   return `${parts.year}-${parts.month}-${parts.day}`;
 };
-
 const seasonFor = () => new Date().getUTCFullYear();
 
 function normalizeFixtures(payload, leagueName = '') {
@@ -37,14 +36,12 @@ function normalizeFixtures(payload, leagueName = '') {
     const short = s.short || '';
     const state = ['NS', 'TBD'].includes(short) ? 'pre' : ['1H','2H','ET','P','LIVE','HT','BT'].includes(short) ? 'in' : 'post';
     return {
-      id: String(f.fixture?.id || ''),
-      date: f.fixture?.date,
+      id: String(f.fixture?.id || ''), date: f.fixture?.date,
       status: { type: { state, shortDetail: s.long || short || 'Scheduled' } },
       competitions: [{ venue: { fullName: f.fixture?.venue?.name || '' }, competitors: [
         { homeAway:'home', score:f.goals?.home == null ? '0' : String(f.goals.home), team:{displayName:home.name || 'تیم میزبان',shortDisplayName:home.name || '',logo:home.logo || ''} },
         { homeAway:'away', score:f.goals?.away == null ? '0' : String(f.goals.away), team:{displayName:away.name || 'تیم مهمان',shortDisplayName:away.name || '',logo:away.logo || ''} }
-      ]}],
-      league:{name:leagueName || f.league?.name || ''}
+      ]}], league:{name:leagueName || f.league?.name || ''}
     };
   })};
 }
@@ -53,8 +50,7 @@ function normalizeStandings(payload) {
   const groups = payload.response?.[0]?.league?.standings || [];
   const entries = groups.flat ? groups.flat() : (groups[0] || []);
   return { standings: entries.map(e => ({
-    rank:e.rank,
-    team:{name:e.team?.name || '',logo:e.team?.logo || ''},
+    rank:e.rank, team:{name:e.team?.name || '',logo:e.team?.logo || ''},
     all:{played:e.all?.played ?? 0,goals:{for:e.all?.goals?.for ?? 0,against:e.all?.goals?.against ?? 0}},
     points:e.points ?? 0
   }))};
@@ -62,18 +58,13 @@ function normalizeStandings(payload) {
 
 function normalizeEspnEvents(payload, leagueName) {
   return { events: (payload.events || []).map(e => {
-    const c = e.competitions?.[0] || {};
-    const teams = c.competitors || [];
+    const c = e.competitions?.[0] || {}, teams = c.competitors || [];
     const home = teams.find(x => x.homeAway === 'home') || teams[0] || {};
     const away = teams.find(x => x.homeAway === 'away') || teams[1] || {};
-    return {
-      id: String(e.id || ''), date: e.date,
-      status: e.status,
-      competitions: [{ venue: { fullName: c.venue?.fullName || '' }, competitors: [
-        { homeAway:'home', score:home.score ?? '0', team:{displayName:home.team?.displayName || '',shortDisplayName:home.team?.shortDisplayName || '',logo:home.team?.logo || ''} },
-        { homeAway:'away', score:away.score ?? '0', team:{displayName:away.team?.displayName || '',shortDisplayName:away.team?.shortDisplayName || '',logo:away.team?.logo || ''} }
-      ]}], league:{name:leagueName}
-    };
+    return { id:String(e.id || ''), date:e.date, status:e.status, competitions:[{venue:{fullName:c.venue?.fullName || ''},competitors:[
+      {homeAway:'home',score:home.score ?? '0',team:{displayName:home.team?.displayName || '',shortDisplayName:home.team?.shortDisplayName || '',logo:home.team?.logo || ''}},
+      {homeAway:'away',score:away.score ?? '0',team:{displayName:away.team?.displayName || '',shortDisplayName:away.team?.shortDisplayName || '',logo:away.team?.logo || ''}}
+    ]}],league:{name:leagueName}};
   })};
 }
 
@@ -82,41 +73,27 @@ function normalizeEspnStandings(payload) {
   const entries = payload.children?.flatMap(c => c.standings?.entries || []) || payload.standings?.entries || [];
   for (const e of entries) {
     const stats = Object.fromEntries((e.stats || []).map(s => [s.name || s.abbreviation, s.value]));
-    rows.push({ rank: Number(e.position || stats.rank || rows.length + 1), team:{name:e.team?.displayName || '',logo:e.team?.logos?.[0]?.href || ''}, all:{played:Number(stats.gamesPlayed || stats.p || 0),goals:{for:Number(stats.pointsFor || 0),against:Number(stats.pointsAgainst || 0)}}, points:Number(stats.points || 0) });
+    rows.push({rank:Number(e.position || stats.rank || rows.length + 1),team:{name:e.team?.displayName || '',logo:e.team?.logos?.[0]?.href || ''},all:{played:Number(stats.gamesPlayed || stats.p || 0),goals:{for:Number(stats.pointsFor || 0),against:Number(stats.pointsAgainst || 0)}},points:Number(stats.points || 0)});
   }
-  return { standings: rows };
+  return {standings:rows};
 }
 
-async function cachedFetch(request, ttl) {
+async function cachedUpstream(request, ttl, headers = {}) {
   const cached = await caches.default.match(request);
   if (cached) return cached;
-  const response = await fetch(request);
-  if (response.ok) await caches.default.put(request, response.clone());
-  return response;
+  const r = await fetch(request, {headers});
+  if (!r.ok) return null;
+  const text = await r.text();
+  const out = new Response(text,{status:200,headers:{'content-type':'application/json; charset=UTF-8'}});
+  await caches.default.put(request,new Response(text,{status:200,headers:{'content-type':'application/json; charset=UTF-8','cache-control':`public, max-age=${ttl}`} }));
+  return out;
 }
 
-async function apiFootball(env, url, ttl) {
+async function apiFootball(env,url,ttl) {
   if (!env.API_FOOTBALL_KEY) return null;
-  const request = new Request(url.toString(), { method:'GET' });
-  const cached = await caches.default.match(request);
-  if (cached) return cached;
-  const r = await fetch(request, { headers:{'x-apisports-key':env.API_FOOTBALL_KEY,accept:'application/json'} });
-  if (!r.ok) return null;
-  const out = new Response(await r.text(), { status:200, headers:{'content-type':'application/json; charset=UTF-8'} });
-  await caches.default.put(request, new Response(out.clone().body, {headers:{'content-type':'application/json; charset=UTF-8','cache-control':`public, max-age=${ttl}`}}));
-  return out;
+  return cachedUpstream(new Request(url.toString(),{method:'GET'}),ttl,{'x-apisports-key':env.API_FOOTBALL_KEY,accept:'application/json'});
 }
-
-async function espn(url, ttl) {
-  const request = new Request(url.toString(), { method:'GET' });
-  const cached = await caches.default.match(request);
-  if (cached) return cached;
-  const r = await fetch(request, {headers:{accept:'application/json'}});
-  if (!r.ok) return null;
-  const out = new Response(await r.text(), {status:200,headers:{'content-type':'application/json; charset=UTF-8'}});
-  await caches.default.put(request, new Response(out.clone().body,{headers:{'content-type':'application/json; charset=UTF-8','cache-control':`public, max-age=${ttl}`}}));
-  return out;
-}
+async function espn(url,ttl) { return cachedUpstream(new Request(url.toString(),{method:'GET'}),ttl,{accept:'application/json'}); }
 
 async function football(request, env) {
   const u = new URL(request.url);
@@ -126,18 +103,17 @@ async function football(request, env) {
   if (route === 'health') return json({ok:true,provider:'API-Football',fallback:'ESPN',keyConfigured:Boolean(env.API_FOOTBALL_KEY),season:seasonFor(),date:tehranDate()});
 
   if (route === 'live') {
-    let r = await apiFootball(env, new URL(`${API_BASE}/fixtures?live=all`), CACHE_SECONDS.live);
+    let r = await apiFootball(env,new URL(`${API_BASE}/fixtures?live=all`),CACHE_SECONDS.live);
     if (r) {
       const payload = await r.json();
-      const allowed = new Set(Object.keys(LEAGUES).map(k => LEAGUES[k].name));
-      const normalized = normalizeFixtures(payload);
-      normalized.events = normalized.events.filter(e => !e.league?.name || allowed.has(e.league.name));
-      return json(normalized,200,CACHE_SECONDS.live);
+      const ids = new Set(Object.values(LEAGUES).map(x => String(x.id)));
+      payload.response = (payload.response || []).filter(f => ids.has(String(f.league?.id)));
+      return json(normalizeFixtures(payload),200,CACHE_SECONDS.live);
     }
-    const out = await Promise.all(Object.entries(LEAGUES).map(async ([id, league]) => {
-      const r2 = await espn(new URL(`${ESPN_BASE}/${id}/scoreboard?limit=100`), CACHE_SECONDS.live);
+    const out = await Promise.all(Object.entries(LEAGUES).map(async ([id,league]) => {
+      const r2 = await espn(new URL(`${ESPN_BASE}/${id}/scoreboard?limit=100`),CACHE_SECONDS.live);
       if (!r2) return [];
-      return normalizeEspnEvents(await r2.json(), league.name).events.filter(e => e.status?.type?.state === 'in');
+      return normalizeEspnEvents(await r2.json(),league.name).events.filter(e => e.status?.type?.state === 'in');
     }));
     return json({events:out.flat()},200,CACHE_SECONDS.live);
   }
@@ -146,9 +122,9 @@ async function football(request, env) {
   if (!league) return json({error:'Unknown league',available:Object.keys(LEAGUES)},404);
 
   if (parts[1] === 'news') {
-    const r = await espn(new URL(`${ESPN_BASE}/${route}/news?limit=12`), 900);
+    const r = await espn(new URL(`${ESPN_BASE}/${route}/news?limit=12`),900);
     if (!r) return json({articles:[]},200,900);
-    return new Response(await r.text(), {status:200,headers:{'content-type':'application/json; charset=UTF-8','cache-control':'public, max-age=900'}});
+    return new Response(await r.text(),{status:200,headers:{'content-type':'application/json; charset=UTF-8','cache-control':'public, max-age=900'}});
   }
 
   if (parts[1] === 'standings') {
@@ -169,7 +145,7 @@ async function football(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request,env) {
     if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'access-control-allow-origin':'*','access-control-allow-methods':'GET, OPTIONS','access-control-allow-headers':'Content-Type'}});
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/football')) return football(request,env);
