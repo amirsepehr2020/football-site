@@ -12,10 +12,5 @@
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <g transform="translate(18 18)">
-    <rect width="184" height="184" rx="48" fill="#10131a" stroke="#2b3341" stroke-width="4"/>
-    <path d="M48 54h27v28l32-28h39l-40 37 43 39h-40L75 103v27H48z" fill="url(#g)" filter="url(#glow)"/>
-    <path d="M126 57l27 27-27 27-27-27z" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="5"/>
-    <circle cx="139.5" cy="84" r="7" fill="#fff" fill-opacity=".9"/>
-  </g>
+
 </svg>
