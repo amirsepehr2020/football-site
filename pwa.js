@@ -16,8 +16,38 @@
     }
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadFloatingHeader, { once: true });
-  else loadFloatingHeader();
+  const setupBottomNavigation = () => {
+    const nav = document.querySelector('.mobile-bottom-nav');
+    if (!nav) return;
+
+    document.body.style.position = 'relative';
+    if (!document.body.style.paddingBottom) {
+      document.body.style.paddingBottom = '92px';
+    }
+
+    let atPageEnd = false;
+    const updatePosition = () => {
+      const nextAtPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+      if (nextAtPageEnd === atPageEnd) return;
+      atPageEnd = nextAtPageEnd;
+
+      nav.style.position = atPageEnd ? 'absolute' : 'fixed';
+      nav.style.bottom = atPageEnd ? '0px' : '';
+      nav.style.transition = 'transform .28s ease, bottom .28s ease';
+    };
+
+    window.addEventListener('scroll', updatePosition, { passive: true });
+    window.addEventListener('resize', updatePosition);
+    updatePosition();
+  };
+
+  const init = () => {
+    loadFloatingHeader();
+    setupBottomNavigation();
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
 
   if (!('serviceWorker' in navigator)) return;
 
