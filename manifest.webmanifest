@@ -12,7 +12,7 @@
   "theme_color": "#0b1020",
   "orientation": "any",
   "icons": [
-    {"src":"/assets/kickora-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"/assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"/assets/kickora-mark.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"},
     {"src":"/assets/kickora-logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
   ],
